@@ -30,7 +30,6 @@ fn remove_task(tasks: &mut Vec<Task>, buffer: &mut String) {
     list_task(tasks);
 
     if tasks.is_empty() {
-        // No need to ask for input if there's nothing to remove
         return;
     }
 
@@ -44,30 +43,24 @@ fn remove_task(tasks: &mut Vec<Task>, buffer: &mut String) {
 
     match choice {
         Ok(num) => {
-            // --- THIS IS THE FIX ---
-            // Check the 1-based index 'num' directly
             if num > 0 && num <= tasks.len() {
-                // It's valid! Now we can safely subtract 1
-                // to get the 0-based index for the vector.
                 let removed_task = tasks.remove(num - 1);
                 println!("\nSuccessfully removed task: '{}'", removed_task.name);
                 list_task(tasks);
             } else {
-                // The index was 0 or larger than the list
                 println!(
                     "\nInvalid index! Please enter a number from 1 to {}.",
                     tasks.len()
                 );
             }
-            // --- END OF FIX ---
         }
         Err(_) => {
             println!("Invalid input, integer please!");
-            // Note: recursive calls can be risky, but it's okay for now.
             remove_task(tasks, buffer);
         }
     }
 }
+
 fn menu(buffer: &mut String) -> String {
     buffer.clear();
     println!("TA-DA!!!\nwhat would you like to do (add, remove, list, quit?");
