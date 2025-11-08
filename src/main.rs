@@ -1,19 +1,34 @@
+use rusqlite::{Connection, Error, Result, params};
 use std::io::{Write, stdin, stdout};
 
+#[derive(Debug)]
 struct Task {
     name: String,
     desc: String,
     completed: bool,
 }
 
-fn main() {
+fn main() -> std::result::Result<(), rusqlite::Error> {
+    let conn = Connection::open_in_memory()?;
+
+    conn.execute(
+        "
+        CREATE TABLE IF NOT EXISTS tasks(
+            id INTEGER PRIMARY KEY,
+            name TEXT NOT NULL,
+            desc TEXT,
+            completed INTEGER NOT NULL
+        )",
+        (),
+    )?;
+
     let mut tasks: Vec<Task> = Vec::new();
     let mut buffer: String = String::new();
 
     loop {
         let choice = menu(&mut buffer);
         match choice.as_str() {
-            "add" => add_task(&mut tasks, &mut buffer),
+            "add" => add_task(&conn, &mut buffer),
             "list" => list_task(&tasks),
             "complete" => complete_task(&mut tasks, &mut buffer),
             "remove" => remove_task(&mut tasks, &mut buffer),
@@ -24,6 +39,8 @@ fn main() {
         }
     }
     println!("Thanks for using TA-DA!!! and have a great day :)");
+
+    Ok(())
 }
 
 fn remove_task(tasks: &mut Vec<Task>, buffer: &mut String) {
@@ -98,8 +115,7 @@ fn complete_task(tasks: &mut Vec<Task>, buffer: &mut String) {
     }
 }
 
-// "add": Ask the user for the task description, create a new Task struct, and .push() it into your tasks vector.
-fn add_task(tasks: &mut Vec<Task>, buffer: &mut String) {
+fn add_task(conn: &Connection, buffer: &mut String) -> Result<(), Error> {
     println!("What's the name of the task you'd like to add?");
     print!("> ");
 
@@ -121,18 +137,19 @@ fn add_task(tasks: &mut Vec<Task>, buffer: &mut String) {
     // 2. Trim and create the owned String for the description
     let desc = buffer.trim().to_string();
 
-    // Now, name and desc are clean, owned Strings.
-    let new_task = Task {
-        name, // `name: name` can be shortened to `name`
-        desc, // `desc: desc` can be shortened to `desc`
-        completed: false,
-    };
+    let completed = 0;
+    conn.execute(
+        "
+        INSERT INTO tasks(name, desc, completed) VALUES (?1, ?2, ?3)",
+        params![&name, &desc, &completed],
+    )?;
 
     println!(
-        "TA-DA!!!\nTask '{}' has been added to your to-do list!",
-        new_task.name
+        "TA-DA!!!\nTask '{:?}' has been added to your to-do list!",
+        name
     );
-    tasks.push(new_task);
+
+    Ok(())
 }
 
 /// Lists all tasks in the vector with a 1-based index.
